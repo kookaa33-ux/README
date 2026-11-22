@@ -1,0 +1,13 @@
+TECHNICAL DATA SHEET - DEMO PP COMPOUND "XT-2010" (Talc 20% filled, impact modified)
+(데모용 가상 TDS — 정답 배합: PP Homo 45 / PP Block 24.5 / POE 10 / Talc 20 / Additive 0.5 wt%)
+
+Property                              Test Method     Unit        Typical Value
+Melt Flow Rate (230°C/2.16kg)         ISO 1133        g/10min     10.5
+Density                               ISO 1183        g/cm3       1.04
+Tensile Strength at Yield (50mm/min)  ISO 527         MPa         28
+Elongation at Break                   ISO 527         %           85
+Flexural Modulus (2mm/min)            ISO 178         MPa         1,780
+Flexural Strength                     ISO 178         MPa         40
+Notched Izod Impact Strength 23°C     ISO 180/1A      kJ/m2       13
+Notched Izod Impact Strength -30°C    ISO 180/1A      kJ/m2       4
+Heat Deflection Temp. (0.45 MPa)      ISO 75          °C          110

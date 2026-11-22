@@ -1,0 +1,7 @@
+numpy>=1.26
+pandas>=2.0
+scipy>=1.11
+scikit-learn>=1.4
+joblib>=1.3
+pdfplumber>=0.10   # TDS PDF 텍스트 추출 (선택)
+pytest>=7          # 테스트

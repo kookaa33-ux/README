@@ -1,0 +1,12 @@
+제품 기술자료 (TDS) — 데모 유리섬유 30% 강화 PP "GF-30"
+(데모용 가상 TDS — 정답 배합: PP Homo 69.2 / Glass fiber 30 / Additive 0.8 wt%)
+
+시험항목                  시험방법        단위          대표값
+용융지수 (230℃, 2.16kg)    ASTM D1238     g/10분        14.6
+비중                       ASTM D792      -             1.12
+인장강도                   ASTM D638      kgf/cm²       785
+신율                       ASTM D638      %             2
+굴곡탄성률                 ASTM D790      kgf/cm²       49,700
+굴곡강도                   ASTM D790      kgf/cm²       1,165
+IZOD 충격강도 (노치, 23℃)  ASTM D256      kgf·cm/cm     5.4
+열변형온도 (4.6kgf/cm²)    ASTM D648      ℃             143
