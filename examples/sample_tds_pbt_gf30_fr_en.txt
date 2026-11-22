@@ -1,0 +1,15 @@
+TECHNICAL DATA SHEET - DEMO PBT COMPOUND "PB-G30FR" (30% Glass fiber reinforced, flame retardant)
+(데모용 가상 TDS — 정답 배합: PBT 51.5 / Glass fiber 30 / Br-FR 13 / Sb2O3 5 / Additive 0.5 wt%)
+Applications: connectors, coil bobbins, E&E housings
+
+Property                              Test Method     Unit        Typical Value
+Melt Flow Rate (250°C/2.16kg)         ISO 1133        g/10min     13.4
+Density                               ISO 1183        g/cm3       1.70
+Tensile Strength at Break (5mm/min)   ISO 527         MPa         126
+Elongation at Break                   ISO 527         %           2.9
+Flexural Modulus                      ISO 178         MPa         11,200
+Flexural Strength                     ISO 178         MPa         196
+Notched Izod Impact Strength 23°C     ISO 180/1A      kJ/m2       10
+Heat Deflection Temp. (0.45 MPa)      ISO 75          °C          219
+Heat Deflection Temp. (1.8 MPa)       ISO 75          °C          204
+Flammability (1.5mm)                  UL 94           -           V-0

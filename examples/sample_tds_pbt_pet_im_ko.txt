@@ -1,0 +1,14 @@
+제품 기술자료 (TDS) — 데모 충격보강 PBT/PET 얼로이 "PBX-IM12"
+(데모용 가상 TDS — 정답 배합: PBT 67.4 / PET 20 / Impact modifier 12 / Additive 0.6 wt%)
+
+시험항목                    시험방법        단위          대표값
+용융지수 (250℃, 2.16kg)      ASTM D1238     g/10분        13.4
+비중                         ASTM D792      -             1.26
+인장강도                     ASTM D638      kgf/cm²       463
+신율 (파단)                  ASTM D638      %             100
+굴곡탄성률                   ASTM D790      kgf/cm²       20,100
+굴곡강도                     ASTM D790      kgf/cm²       717
+IZOD 충격강도 (노치, 23℃)    ASTM D256      kgf·cm/cm     12.2
+열변형온도 (4.6kgf/cm²)      ASTM D648      ℃             150
+열변형온도 (18.6kgf/cm²)     ASTM D648      ℃             59
+난연성 (1.6mm)               UL 94          -             HB

@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .schema import PROPERTIES
+from .schema import PROPERTIES, UL94_LEVELS
 
 NUM = r"(?<![\w.])-?\d{1,3}(?:,\d{3})+(?:\.\d+)?|(?<![\w.])-?\d+(?:\.\d+)?"
 
@@ -21,10 +21,13 @@ STRIP_PATTERNS = [
     r"-?\d+(?:\.\d+)?\s*°?\s*C\s*[/,]\s*\d+(?:\.\d+)?\s*kg[f]?",   # 230°C/2.16kg
     r"\d+(?:\.\d+)?\s*kg[f]?\b(?!\s*[-/·]?\s*cm)",                   # 2.16 kg
     r"\b(?:0\.45|1\.8|1\.82|0\.455|1\.82)\s*MPa\b", r"\b(?:66|264)\s*psi\b",
+    r"\b(?:4\.6|18\.6)\s*kgf?\s*/\s*cm2",                            # HDT 하중
     r"\b\d+(?:\.\d+)?\s*mm(?:/min)?\b",                                # 시편두께·속도
     r"@\s*-?\d+\s*°?\s*C", r"\b23\s*°\s*C\b",
 ]
 
+HDT_18 = re.compile(r"1\.8\d?\s*mpa|264\s*psi|18\.6\s*kg", re.I)
+UL_RATING = re.compile(r"(?<![\w])(5\s*V\s*A|5\s*V\s*B|V\s*-?\s*[012]|HB)(?![\w])", re.I)
 LOW_TEMP = re.compile(r"(?:-\s?(?:10|18|20|30|40)\s*°?\s*C)|저온")
 
 
@@ -66,7 +69,7 @@ def _convert(key: str, value: float, line: str, res: ParseResult) -> float:
         if re.search(r"\bj\s*/\s*m\b(?!2)", l):
             res.warnings.append("Izod J/m -> kJ/m2 (4 mm 시편 가정, ÷4)")
             return value / 4
-    if key == "hdt" and re.search(r"°\s*f\b", l):
+    if key in ("hdt", "hdt_18") and re.search(r"°\s*f\b", l):
         return (value - 32) * 5 / 9
     if key == "density" and re.search(r"kg\s*/\s*m3", l):
         return value / 1000
@@ -82,7 +85,6 @@ def _score(key: str, line: str) -> int:
         s += 1 if "yield" in l or "항복" in l else 0
     if key == "hdt":
         s += 2 if re.search(r"0\.45\s*mpa|66\s*psi|4\.6\s*kg", l) else 0
-        s -= 2 if re.search(r"1\.8\d?\s*mpa|264\s*psi|18\.6\s*kg", l) else 0
     if key == "izod_impact":
         s += 1 if "notch" in l else 0
         s -= 3 if LOW_TEMP.search(line) else 0
@@ -101,6 +103,15 @@ def parse_tds_text(text: str) -> ParseResult:
                 continue
             if key == "tensile_strength" and ("modulus" in low or "elongation" in low):
                 continue
+            if key == "ul94":
+                m = UL_RATING.search(line)
+                if m and key not in best:
+                    tok = re.sub(r"\s", "", m.group(1).upper())
+                    tok = tok if tok in UL94_LEVELS else tok.replace("V", "V-", 1)
+                    best[key] = (0, float(UL94_LEVELS[tok]), line.strip())
+                continue
+            if key == "hdt" and HDT_18.search(line):
+                key = "hdt_18"  # 1.8 MPa 조건 HDT 는 별도 물성
             # 키워드 이후 문자열에서 값 탐색
             pos = min(low.find(k) for k in spec.keywords if k in low)
             tail = line[pos:]
@@ -117,8 +128,6 @@ def parse_tds_text(text: str) -> ParseResult:
     for key, (sc, val, line) in best.items():
         res.properties[key] = round(val, 4)
         res.raw_lines[key] = line
-        if key == "hdt" and sc < 0:
-            res.warnings.append("HDT 가 1.8 MPa 조건으로 보입니다 (모델은 0.45 MPa 기준).")
     missing = [k for k in PROPERTIES if k not in res.properties]
     if missing:
         res.warnings.append(f"추출되지 않은 물성: {missing}")

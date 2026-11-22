@@ -1,6 +1,7 @@
 """명령행 도구.
 
-    python -m tds_model.cli demo-data  --out data/demo_training_data.csv
+    python -m tds_model.cli demo-data  --out data/demo_training_data.csv            # PP
+    python -m tds_model.cli demo-data  --system polyester --out data/demo_polyester_training_data.csv
     python -m tds_model.cli train      --data data/demo_training_data.csv --model models/model.joblib
     python -m tds_model.cli evaluate   --data data/demo_training_data.csv
     python -m tds_model.cli predict    --model models/model.joblib --tds examples/sample_tds_en.txt
@@ -16,16 +17,20 @@ import numpy as np
 import pandas as pd
 
 from .model import CompositionPredictor
-from .schema import DEMO_COMPONENTS, PROPERTIES
+from .schema import COMP_PREFIX
+from .schema import COMPONENT_LABELS, PROPERTIES, encode_value, format_value
 from .tds_parser import parse_tds
 
 
 def _label(c: str) -> str:
-    return DEMO_COMPONENTS.get(c, (c.removeprefix("comp_"),))[0]
+    return COMPONENT_LABELS.get(c, c.removeprefix(COMP_PREFIX))
 
 
 def cmd_demo_data(a):
-    from .synthetic import make_dataset
+    if a.system == "polyester":
+        from .synthetic_polyester import make_dataset
+    else:
+        from .synthetic import make_dataset
     df = make_dataset(a.n, a.seed)
     df.to_csv(a.out, index=False)
     print(f"합성 데모 데이터 {len(df)}행 저장: {a.out}")
@@ -47,7 +52,7 @@ def cmd_evaluate(a):
     rng = np.random.default_rng(1)
     err_d, err_o = [], []
     for _, r in test.iterrows():
-        props = {c: r[c] for c in m.prop_cols}
+        props = {c: r[c] for c in m.prop_cols if pd.notna(r[c])}
         if a.drop > 0:  # 일부 물성 누락 시나리오
             for c in rng.choice(m.prop_cols, a.drop, replace=False):
                 props.pop(c)
@@ -72,7 +77,7 @@ def cmd_predict(a):
         props = pr.properties
         print("== TDS 추출 물성 ==")
         for k, v in props.items():
-            print(f"  {PROPERTIES[k].label:38s} {v:>10g} {PROPERTIES[k].unit}")
+            print(f"  {PROPERTIES[k].label:44s} {format_value(k, v):>10s} {PROPERTIES[k].unit}")
         for w in pr.warnings:
             print(f"  [주의] {w}")
     else:
@@ -89,8 +94,8 @@ def cmd_predict(a):
         print("  -- 예측 물성 (입력값 대비) --")
         for k, v in c.predicted_properties.items():
             tgt = props.get(k)
-            t = f"(입력 {tgt:g})" if tgt is not None else "(입력 없음)"
-            print(f"  {PROPERTIES[k].label:38s} {v:>10.3g} {t}")
+            t = f"(입력 {format_value(k, encode_value(k, tgt))})" if tgt is not None else "(입력 없음)"
+            print(f"  {PROPERTIES[k].label:44s} {format_value(k, v):>10s} {t}")
 
 
 def main(argv=None):
@@ -99,6 +104,7 @@ def main(argv=None):
 
     s = sp.add_parser("demo-data", help="합성 데모 학습 데이터 생성")
     s.add_argument("--out", default="data/demo_training_data.csv")
+    s.add_argument("--system", choices=["pp", "polyester"], default="pp", help="소재 체계")
     s.add_argument("--n", type=int, default=1200)
     s.add_argument("--seed", type=int, default=0)
     s.set_defaults(f=cmd_demo_data)

@@ -1,10 +1,18 @@
 # TDS 물성 → 원부원료 배합 예측 모델
 
 TDS(Technical Data Sheet)·브로셔에 기재된 고분자 물성값으로 원부원료 배합비(wt%)를
-역으로 추정하는 모델입니다. PP 컴파운드(Homo/Block PP, POE, Talc, 유리섬유, CaCO3, 첨가제)를
-기본 예시로 구성했으며, 학습 데이터의 컬럼만 바꾸면 다른 수지·원료 체계에도 그대로 쓸 수 있습니다.
+역으로 추정하는 모델입니다. 두 가지 소재 체계를 예시로 제공하며, 학습 데이터의 컬럼만 바꾸면
+다른 수지·원료 체계에도 그대로 쓸 수 있습니다.
 
-> ⚠️ 저장소에 포함된 `data/demo_training_data.csv` 는 일반적인 경향을 단순화한 경험식으로 만든
+| 소재 체계 (`--system`) | 원부원료 | 데모 데이터 |
+|---|---|---|
+| `pp` | Homo PP, Block PP, POE, Talc, 유리섬유, CaCO3, 첨가제 | `data/demo_training_data.csv` |
+| `polyester` | PBT, PET, 유리섬유, 미네랄(Talc/Mica), 충격보강제, 브롬계 난연제, Sb2O3, 첨가제 | `data/demo_polyester_training_data.csv` |
+
+폴리에스터 체계는 TDS에 흔히 나오는 **HDT 1.8 MPa**(`hdt_18`)와 **UL94 난연등급**(`ul94`)을 물성으로 추가로 씁니다.
+UL94는 HB=0, V-2=1, V-1=2, V-0=3 으로 변환하며, JSON 입력 시 `"ul94": "V-0"` 처럼 문자열로 넣어도 됩니다.
+
+> ⚠️ 저장소에 포함된 데모 데이터는 일반적인 경향을 단순화한 경험식으로 만든
 > **합성 데모 데이터**입니다. 실제 배합 설계에 쓰려면 사내 실측 배합-물성 데이터로 재학습해야 합니다.
 
 ## 구성
@@ -14,9 +22,10 @@ tds_model/
   schema.py      물성 항목·표준 단위·TDS 키워드(영/한), 데모 원료 정의
   tds_parser.py  TDS(PDF/텍스트) 물성 추출 + 단위 환산 (kgf/cm², psi, J/m, kgf·cm/cm, °F …)
   model.py       역예측 모델 (CompositionPredictor)
-  synthetic.py   합성 데모 데이터 생성기
+  synthetic.py             합성 데모 데이터 생성기 (PP)
+  synthetic_polyester.py   합성 데모 데이터 생성기 (PBT/PET)
   cli.py         명령행 도구
-examples/        데모 TDS (영문·국문)
+examples/        데모 TDS (PP 영문·국문, PBT GF30 FR 영문, PBT/PET 충격보강 국문)
 tests/           pytest 테스트
 ```
 
@@ -48,6 +57,13 @@ python -m tds_model.cli predict --tds examples/sample_tds_ko.txt
 python -m tds_model.cli predict --props '{"mfi": 14, "density": 1.12, "flexural_modulus": 4800}' --top-k 3
 python -m tds_model.cli predict --tds my_tds.pdf --json      # JSON 출력
 
+# 폴리에스터(PBT/PET) 체계
+python -m tds_model.cli demo-data --system polyester --n 1500 --out data/demo_polyester_training_data.csv
+python -m tds_model.cli train --data data/demo_polyester_training_data.csv --model models/model_polyester.joblib
+python -m tds_model.cli predict --model models/model_polyester.joblib --tds examples/sample_tds_pbt_gf30_fr_en.txt
+python -m tds_model.cli predict --model models/model_polyester.joblib \
+    --props '{"density": 1.70, "flexural_modulus": 11200, "hdt_18": 204, "ul94": "V-0"}'
+
 # 4) 홀드아웃 평가 (--drop N : 물성 N개 누락 시나리오)
 python -m tds_model.cli evaluate --data data/demo_training_data.csv --drop 3
 ```
@@ -69,12 +85,12 @@ CSV 한 행이 한 grade/배합입니다. 컬럼 구성은 다음과 같습니�
 | 컬럼 | 설명 |
 |---|---|
 | `grade` (선택) | 제품명 |
-| `mfi`, `density`, `tensile_strength`, `elongation`, `flexural_modulus`, `flexural_strength`, `izod_impact`, `hdt` | 물성. 일부만 있어도 되고 빈칸도 허용합니다. 단위는 `schema.py` 기준입니다 (MPa, kJ/m², °C@0.45MPa 등) |
+| `mfi`, `density`, `tensile_strength`, `elongation`, `flexural_modulus`, `flexural_strength`, `izod_impact`, `hdt`, `hdt_18`, `ul94` | 물성. 일부만 있어도 되고 빈칸도 허용합니다. 단위는 `schema.py` 기준입니다 (MPa, kJ/m², `hdt`=°C@0.45MPa, `hdt_18`=°C@1.8MPa, `ul94`=0~3 등) |
 | `comp_<원료명>` | 원료별 wt%. 개수와 이름은 자유이며 합계는 100입니다 |
 
 물성 항목을 추가하려면 `schema.py` 의 `PROPERTIES` 에 항목과 TDS 키워드를 추가하면 됩니다.
 
-## 데모 성능 (합성 데이터 1,200건 중 60건 홀드아웃)
+## 데모 성능 — PP (합성 데이터 1,200건 중 60건 홀드아웃)
 
 | 원료 | Direct MAE | 최적화 Top‑1 MAE |
 |---|---|---|

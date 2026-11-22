@@ -23,7 +23,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import ConstantKernel, Matern, WhiteKernel
 from sklearn.multioutput import MultiOutputRegressor
 
-from .schema import COMP_PREFIX, PROPERTIES
+from .schema import COMP_PREFIX, PROPERTIES, encode_value
 
 
 def project_simplex(x: np.ndarray, total: float = 100.0) -> np.ndarray:
@@ -124,16 +124,20 @@ class CompositionPredictor:
         X = comp.reindex(columns=self.comp_cols, fill_value=0.0).to_numpy(float) / 100.0
         return pd.DataFrame(self._inv_tf(self.forward_.predict(X)), columns=self.prop_cols)
 
+    def _props_row(self, props: dict) -> pd.DataFrame:
+        return pd.DataFrame([{c: encode_value(c, props[c]) if props.get(c) is not None else np.nan
+                              for c in self.prop_cols}], dtype=float)
+
     def predict_direct(self, props: dict[str, float]) -> dict[str, float]:
         """Direct inverse model 만 사용한 빠른 예측 (최적화 없음)."""
-        row = pd.DataFrame([{c: props.get(c, np.nan) for c in self.prop_cols}], dtype=float)
+        row = self._props_row(props)
         x = project_simplex(self.inverse_.predict(self._tf(row))[0])
         return {c: round(float(v), 2) for c, v in zip(self.comp_cols, x)}
 
     def predict(self, props: dict[str, float], top_k: int = 3,
                 weights: dict[str, float] | None = None) -> list[Candidate]:
         """TDS 물성(dict, 일부 누락 가능) -> 배합 후보 Top-K."""
-        row = pd.DataFrame([{c: props.get(c, np.nan) for c in self.prop_cols}], dtype=float)
+        row = self._props_row(props)
         z = self._tf(row)[0]
         known = ~np.isnan(z)
         if not known.any():

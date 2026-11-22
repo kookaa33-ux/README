@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from .schema import DEMO_COMPONENTS
+from .schema import PP_COMPONENTS as DEMO_COMPONENTS
 
 # 배합 아키타입: (이름, 성분별 (min, max) wt%) — 나머지는 PP 로 채운다
 ARCHETYPES = {
